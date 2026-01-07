@@ -1,0 +1,48 @@
+# Environment
+.env
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+.Python
+venv/
+.venv/
+.mypy_cache/
+
+# Node
+node_modules/
+.vite/
+
+# Data
+data/*.db
+data/*.csv
+data/*.json
+data/chroma_db/
+datasets/archive1/
+datasets/archive2/
+datasets/archive3/
+datasets/chroma_db/
+
+# Output
+output/*.xlsx
+
+# IDE
+.vscode/
+.idea/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Build
+frontend/build/
+*.tsbuildinfo
+frontend/vite.config.js
+frontend/vite.config.d.ts
+
+# Docs
+docs/
+
+# Claude
+.claude/
