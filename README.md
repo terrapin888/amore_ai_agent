@@ -1,5 +1,14 @@
 # LANEIGE Ranking Insight Agent
 
+![React](https://img.shields.io/badge/React-18-61DAFB?logo=react&logoColor=white)
+![TypeScript](https://img.shields.io/badge/TypeScript-5.0-3178C6?logo=typescript&logoColor=white)
+![Vite](https://img.shields.io/badge/Vite-5.0-646CFF?logo=vite&logoColor=white)
+![TailwindCSS](https://img.shields.io/badge/Tailwind_CSS-3.4-06B6D4?logo=tailwindcss&logoColor=white)
+![FastAPI](https://img.shields.io/badge/FastAPI-0.104-009688?logo=fastapi&logoColor=white)
+![Python](https://img.shields.io/badge/Python-3.10+-3776AB?logo=python&logoColor=white)
+![SQLite](https://img.shields.io/badge/SQLite-3-003B57?logo=sqlite&logoColor=white)
+![Anthropic](https://img.shields.io/badge/Claude_API-Anthropic-191919?logo=anthropic&logoColor=white)
+
 > 글로벌 뷰티 플랫폼(Amazon US, @COSME JP) 내 라네즈 제품의 랭킹을 추적하여
 > **자동 리포트 생성**과 **대화형 AI 분석**을 제공하는 **하이브리드형 인사이트 에이전트**
 
