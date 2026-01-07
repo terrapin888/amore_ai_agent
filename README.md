@@ -1,9 +1,5 @@
 # LANEIGE Ranking Insight Agent
 
-> **아모레퍼시픽 AI INNOVATION CHALLENGE 2026** 공모전 참가작
->
-> **[AGENT 07] 글로벌 이커머스 랭킹 모니터링**
-
 ![React](https://img.shields.io/badge/React-18-61DAFB?logo=react&logoColor=white)
 ![TypeScript](https://img.shields.io/badge/TypeScript-5.0-3178C6?logo=typescript&logoColor=white)
 ![Vite](https://img.shields.io/badge/Vite-5.0-646CFF?logo=vite&logoColor=white)
@@ -13,8 +9,12 @@
 ![SQLite](https://img.shields.io/badge/SQLite-3-003B57?logo=sqlite&logoColor=white)
 ![Anthropic](https://img.shields.io/badge/Claude_API-Anthropic-191919?logo=anthropic&logoColor=white)
 
-> 글로벌 뷰티 플랫폼(Amazon US, @COSME JP) 내 라네즈 제품의 랭킹을 추적하여
-> **자동 리포트 생성**과 **대화형 AI 분석**을 제공하는 **AI 인사이트 에이전트**
+> **아모레퍼시픽 AI INNOVATION CHALLENGE 2026** 공모전 참가작
+>
+> **[AGENT 07] 글로벌 이커머스 랭킹 모니터링**
+
+글로벌 뷰티 플랫폼(Amazon US, @COSME JP) 내 라네즈 제품의 랭킹을 추적하여
+**자동 리포트 생성**과 **대화형 AI 분석**을 제공하는 **AI 인사이트 에이전트**
 
 ---
 
