@@ -1,5 +1,9 @@
 # LANEIGE Ranking Insight Agent
 
+> **아모레퍼시픽 AI INNOVATION CHALLENGE 2026** 공모전 참가작
+>
+> **[AGENT 07] 글로벌 이커머스 랭킹 모니터링**
+
 ![React](https://img.shields.io/badge/React-18-61DAFB?logo=react&logoColor=white)
 ![TypeScript](https://img.shields.io/badge/TypeScript-5.0-3178C6?logo=typescript&logoColor=white)
 ![Vite](https://img.shields.io/badge/Vite-5.0-646CFF?logo=vite&logoColor=white)
@@ -10,7 +14,7 @@
 ![Anthropic](https://img.shields.io/badge/Claude_API-Anthropic-191919?logo=anthropic&logoColor=white)
 
 > 글로벌 뷰티 플랫폼(Amazon US, @COSME JP) 내 라네즈 제품의 랭킹을 추적하여
-> **자동 리포트 생성**과 **대화형 AI 분석**을 제공하는 **하이브리드형 인사이트 에이전트**
+> **자동 리포트 생성**과 **대화형 AI 분석**을 제공하는 **AI 인사이트 에이전트**
 
 ---
 
@@ -21,17 +25,10 @@
 글로벌 뷰티 시장에서 라네즈(LANEIGE)의 경쟁력을 데이터 기반으로 분석하고, 마케팅 의사결정을 지원하기 위한 AI 에이전트입니다.
 
 **핵심 가치:**
-- 랭킹 변동 히스토리 자동 수집 및 저장
-- 제품별 성과 인사이트 제공
+- 랭킹 변동 히스토리 자동 수집 및 Excel 형식 저장
+- 제품별 성과 AI를 활용하여 자동 인사이트 제공
 - 경쟁사 대비 포지셔닝 분석
-
-### 왜 Hybrid UX인가?
-
-| 기존 방식 | Hybrid UX (본 프로젝트) |
-|-----------|-------------------------|
-| 단순 대시보드 조회 | 실시간 대시보드 + 엑셀 리포트 자동 생성 |
-| 수동 데이터 분석 | RAG 기반 대화형 인사이트 질의응답 |
-| 정형화된 보고서 | 자연어로 원인 분석 및 전략 제안 |
+- 대화형 인터페이스 기반 인사이트 분석 기능 제공
 
 ---
 
@@ -68,7 +65,7 @@ RAG (Retrieval-Augmented Generation) 기반으로 자연어 질문에 대한 AI 
 **기술 구성:**
 - Vector DB(ChromaDB)에서 관련 제품 정보 검색
 - 랭킹 데이터와 제품 특성을 결합한 맥락적 분석
-- Claude API를 통한 고품질 추론
+- LLM API를 통한 고품질 추론
 
 ---
 
@@ -191,7 +188,7 @@ cd frontend
 npm run dev
 ```
 
-브라우저에서 `http://localhost:5173` 접속
+브라우저에서 `http://localhost:3000` 접속
 
 ---
 
@@ -267,36 +264,6 @@ Claude API 기반 RAG 시스템으로 심층 분석을 제공합니다.
 | **Styling** | Tailwind CSS | 스타일링 |
 | **UI Components** | shadcn/ui | 컴포넌트 라이브러리 |
 | **Charts** | Recharts | 데이터 시각화 |
-
----
-
-## 라이선스
-
-이 프로젝트는 **MIT License** 하에 배포됩니다.
-
-```
-MIT License
-
-Copyright (c) 2024
-
-Permission is hereby granted, free of charge, to any person obtaining a copy
-of this software and associated documentation files (the "Software"), to deal
-in the Software without restriction, including without limitation the rights
-to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-copies of the Software, and to permit persons to whom the Software is
-furnished to do so, subject to the following conditions:
-
-The above copyright notice and this permission notice shall be included in all
-copies or substantial portions of the Software.
-
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-SOFTWARE.
-```
 
 ---
 
