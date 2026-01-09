@@ -4,6 +4,7 @@ ChromaDB를 사용한 제품 정보 벡터 저장 및 검색 기능을 제공해
 """
 
 from pathlib import Path
+from typing import Any
 
 import chromadb
 import pandas as pd
@@ -89,9 +90,9 @@ class ProductVectorStore:
             products_df (pd.DataFrame): 제품 데이터
             batch_size (int): 배치 크기 (기본값: 100)
         """
-        documents = []
-        metadatas = []
-        ids = []
+        documents: list[str] = []
+        metadatas: list[dict[str, Any]] = []
+        ids: list[str] = []
 
         for idx, row in products_df.iterrows():
             product = row.to_dict()
@@ -99,12 +100,12 @@ class ProductVectorStore:
             doc = self._create_document(product)
             documents.append(doc)
 
-            metadata = {
+            metadata: dict[str, Any] = {
                 "product_name": str(product.get("product_name", "")),
                 "brand": str(product.get("brand", "")),
                 "category": str(product.get("category", "")),
                 "amazon_category": str(product.get("amazon_category", "")),
-                "price": float(product.get("price", 0)) if product.get("price") else 0,
+                "price": float(product.get("price", 0)) if product.get("price") else 0.0,
                 "is_laneige": bool(product.get("is_laneige", False)),
             }
             metadatas.append(metadata)
@@ -119,9 +120,9 @@ class ProductVectorStore:
             batch_metas = metadatas[i:end]
             batch_ids = ids[i:end]
 
-            embeddings = self.embedding_model.encode(batch_docs).tolist()
+            embeddings: list[list[float]] = self.embedding_model.encode(batch_docs).tolist()
 
-            self.collection.add(documents=batch_docs, metadatas=batch_metas, ids=batch_ids, embeddings=embeddings)
+            self.collection.add(documents=batch_docs, metadatas=batch_metas, ids=batch_ids, embeddings=embeddings)  # type: ignore[arg-type]
 
             print(f"Added {end}/{total} products")
 
@@ -255,22 +256,22 @@ class ProductVectorStore:
 
                 document = "\n".join(doc_parts)
 
-                metadata = {
+                metadata: dict[str, Any] = {
                     "product_name": str(row.get("product_name", "")),
                     "brand": str(row.get("brand", "")),
                     "category": category,
                     "amazon_category": str(row.get("amazon_category", category)),
                     "is_laneige": bool(row.get("is_laneige", False)),
                     "current_rank": int(current_rank) if current_rank else 0,
-                    "avg_rank": float(avg_rank) if avg_rank else 0,
+                    "avg_rank": float(avg_rank) if avg_rank else 0.0,
                     "trend": str(trend) if trend else "",
-                    "price": float(row.get("price", 0)) if row.get("price") else 0,
+                    "price": float(row.get("price", 0)) if row.get("price") else 0.0,
                 }
 
-                embedding = self.embedding_model.encode([document]).tolist()[0]
+                embedding: list[float] = self.embedding_model.encode([document]).tolist()[0]
 
                 self.collection.upsert(
-                    ids=[product_id], documents=[document], metadatas=[metadata], embeddings=[embedding]
+                    ids=[product_id], documents=[document], metadatas=[metadata], embeddings=[embedding]  # type: ignore[arg-type]
                 )
                 updated_count += 1
 

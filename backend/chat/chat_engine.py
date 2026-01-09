@@ -4,8 +4,10 @@ Anthropic Claude API를 활용한 RAG 기반 대화형 분석 엔진이에요.
 """
 
 import os
+from typing import cast
 
 from anthropic import Anthropic
+from anthropic.types import MessageParam, TextBlock
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -58,10 +60,10 @@ class ChatEngine:
         self.conversation_history: list[dict] = []
 
         api_key = os.getenv("ANTHROPIC_API_KEY")
+        self.client: Anthropic | None = None
         if api_key:
             self.client = Anthropic(api_key=api_key)
         else:
-            self.client = None
             print("Warning: ANTHROPIC_API_KEY not set. Using mock responses.")
 
     def _get_rag_context(self, query: str) -> str:
@@ -197,10 +199,12 @@ class ChatEngine:
 
         if self.client is not None:
             try:
+                messages = cast(list[MessageParam], self.conversation_history)
                 response = self.client.messages.create(
-                    model=self.model, max_tokens=2048, system=SYSTEM_PROMPT, messages=self.conversation_history
+                    model=self.model, max_tokens=2048, system=SYSTEM_PROMPT, messages=messages
                 )
-                assistant_message = response.content[0].text
+                content_block = response.content[0]
+                assistant_message = content_block.text if isinstance(content_block, TextBlock) else ""
             except Exception as e:
                 assistant_message = f"API 오류: {str(e)}"
         else:
