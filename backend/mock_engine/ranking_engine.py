@@ -1,3 +1,9 @@
+"""Mock 랭킹 엔진 모듈.
+
+다양한 시나리오 기반으로 랭킹 히스토리를 시뮬레이션해요.
+날짜별 랭킹 기록을 생성하여 테스트 및 개발에 활용해요.
+"""
+
 import random
 from datetime import datetime, timedelta
 from enum import Enum
@@ -6,6 +12,19 @@ import pandas as pd
 
 
 class RankingScenario(Enum):
+    """랭킹 시나리오 열거형.
+
+    제품의 랭킹 변화 패턴을 정의해요.
+
+    Attributes:
+        BEST_SELLER: 베스트셀러 (항상 상위권)
+        RISING_STAR: 떠오르는 제품 (순위 상승 중)
+        STABLE: 안정적 (순위 유지)
+        DECLINING: 하락세 (순위 하락 중)
+        COMPETITOR_SHOCK: 경쟁사 충격 (급변동)
+        NEW_ENTRY: 신규 진입 (새로 시장에 등장)
+    """
+
     BEST_SELLER = "best_seller"
     RISING_STAR = "rising_star"
     STABLE = "stable"
@@ -27,11 +46,36 @@ LANEIGE_SCENARIOS = {
 
 
 class MockRankingEngine:
+    """Mock 랭킹 시뮬레이션 엔진.
+
+    제품별 시나리오를 기반으로 날짜별 랭킹 히스토리를 생성해요.
+
+    Attributes:
+        products: 제품 데이터프레임
+        ranking_history (dict): 카테고리별 랭킹 히스토리
+    """
+
     def __init__(self, products_df: pd.DataFrame):
+        """MockRankingEngine을 초기화해요.
+
+        Args:
+            products_df: 제품 정보가 담긴 데이터프레임
+        """
         self.products = products_df.copy()
         self.ranking_history: dict[str, pd.DataFrame] = {}
 
     def _apply_scenario(self, scenario: RankingScenario, day_index: int, total_days: int, base_rank: int = 50) -> int:
+        """시나리오에 따른 랭킹을 계산해요.
+
+        Args:
+            scenario: 적용할 랭킹 시나리오
+            day_index: 현재 일차 인덱스 (0부터 시작)
+            total_days: 전체 일수
+            base_rank: 기본 순위 (기본값: 50)
+
+        Returns:
+            int: 해당 일차의 순위
+        """
         progress = day_index / max(total_days - 1, 1)
 
         if scenario == RankingScenario.BEST_SELLER:
@@ -73,6 +117,16 @@ class MockRankingEngine:
     def generate_ranking_history(
         self, category: str, days: int = 30, start_date: datetime | None = None
     ) -> pd.DataFrame:
+        """카테고리별 랭킹 히스토리를 생성해요.
+
+        Args:
+            category: Amazon 카테고리 이름
+            days: 생성할 일수 (기본값: 30)
+            start_date: 시작 날짜 (기본값: None, 현재 날짜 - days)
+
+        Returns:
+            pd.DataFrame: 날짜별 랭킹 기록이 담긴 데이터프레임
+        """
         if start_date is None:
             start_date = datetime.now() - timedelta(days=days)
 
@@ -135,6 +189,14 @@ class MockRankingEngine:
         return history_df
 
     def generate_all_categories(self, days: int = 30) -> dict[str, pd.DataFrame]:
+        """모든 카테고리의 랭킹 히스토리를 생성해요.
+
+        Args:
+            days: 생성할 일수 (기본값: 30)
+
+        Returns:
+            dict: 카테고리명을 키로 하는 데이터프레임 딕셔너리
+        """
         categories = ["lip_care", "skincare", "lip_makeup", "face_powder"]
         results = {}
 
@@ -146,6 +208,14 @@ class MockRankingEngine:
         return results
 
     def get_laneige_summary(self, category: str) -> dict:
+        """LANEIGE 제품의 랭킹 요약을 반환해요.
+
+        Args:
+            category: 카테고리
+
+        Returns:
+            dict: 제품명을 키로 하는 통계 딕셔너리
+        """
         if category not in self.ranking_history:
             return {}
 
@@ -173,6 +243,15 @@ class MockRankingEngine:
         return summary
 
     def generate_insight(self, category: str, product_name: str) -> str:
+        """특정 제품에 대한 인사이트 리포트를 생성해요.
+
+        Args:
+            category: 카테고리
+            product_name: 제품명
+
+        Returns:
+            str: 인사이트 리포트 텍스트
+        """
         if category not in self.ranking_history:
             return "데이터가 없습니다."
 

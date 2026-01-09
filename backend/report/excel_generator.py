@@ -1,3 +1,9 @@
+"""Excel 리포트 생성 모듈.
+
+랭킹 데이터를 분석하여 Excel 형식의 리포트를 생성해요.
+요약, 카테고리별 상세, LANEIGE 분석 시트를 포함해요.
+"""
+
 from datetime import datetime, timedelta
 from pathlib import Path
 
@@ -6,6 +12,7 @@ from openpyxl import Workbook
 from openpyxl.formatting.rule import ColorScaleRule
 from openpyxl.styles import Alignment, Border, Font, PatternFill, Side
 
+# 스타일 상수
 HEADER_FILL = PatternFill(start_color="1F4E79", end_color="1F4E79", fill_type="solid")
 HEADER_FONT = Font(color="FFFFFF", bold=True, size=11)
 LANEIGE_FILL = PatternFill(start_color="E2EFDA", end_color="E2EFDA", fill_type="solid")
@@ -14,12 +21,36 @@ BORDER = Border(left=Side(style="thin"), right=Side(style="thin"), top=Side(styl
 
 
 class ExcelReportGenerator:
+    """Excel 랭킹 리포트 생성기.
+
+    랭킹 데이터를 분석하여 다양한 시트를 포함한
+    Excel 리포트 파일을 생성해요.
+
+    Attributes:
+        output_dir (Path): 출력 디렉토리 경로
+        workbook (Workbook | None): 현재 작업 중인 워크북
+    """
+
     def __init__(self, output_dir: str = "output"):
+        """ExcelReportGenerator를 초기화해요.
+
+        Args:
+            output_dir: 출력 디렉토리 경로 (기본값: "output")
+        """
         self.output_dir = Path(output_dir)
         self.output_dir.mkdir(exist_ok=True)
         self.workbook: Workbook | None = None
 
     def create_ranking_report(self, ranking_data: dict[str, pd.DataFrame], filename: str | None = None) -> str:
+        """랭킹 리포트를 생성해요.
+
+        Args:
+            ranking_data: 카테고리별 랭킹 데이터프레임 딕셔너리
+            filename: 출력 파일명 (기본값: None, 타임스탬프 기반 자동 생성)
+
+        Returns:
+            str: 생성된 파일 경로
+        """
         if filename is None:
             timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
             filename = f"ranking_report_{timestamp}.xlsx"
@@ -43,9 +74,22 @@ class ExcelReportGenerator:
         return str(filepath)
 
     def _get_day_columns(self, df: pd.DataFrame) -> list:
+        """데이터프레임에서 일별 컬럼을 정렬하여 반환해요.
+
+        Args:
+            df: 랭킹 데이터프레임
+
+        Returns:
+            list: 정렬된 day_N 컬럼 리스트
+        """
         return sorted([c for c in df.columns if c.startswith("day_")], key=lambda x: int(x.split("_")[1]))
 
     def _create_summary_sheet(self, ranking_data: dict[str, pd.DataFrame]) -> None:
+        """요약 시트를 생성해요.
+
+        Args:
+            ranking_data: 카테고리별 랭킹 데이터프레임 딕셔너리
+        """
         assert self.workbook is not None
         ws = self.workbook.create_sheet("Summary", 0)
 
@@ -109,6 +153,12 @@ class ExcelReportGenerator:
         ws.column_dimensions["E"].width = 18
 
     def _create_category_sheet(self, category: str, df: pd.DataFrame) -> None:
+        """카테고리별 상세 시트를 생성해요.
+
+        Args:
+            category: 카테고리명
+            df: 해당 카테고리의 랭킹 데이터프레임
+        """
         assert self.workbook is not None
         sheet_name = category.replace("_", " ").title()[:31]
         ws = self.workbook.create_sheet(sheet_name)
@@ -183,6 +233,11 @@ class ExcelReportGenerator:
                 ws.conditional_formatting.add(range_str, color_scale)
 
     def _create_laneige_sheet(self, ranking_data: dict[str, pd.DataFrame]) -> None:
+        """LANEIGE 제품 분석 시트를 생성해요.
+
+        Args:
+            ranking_data: 카테고리별 랭킹 데이터프레임 딕셔너리
+        """
         assert self.workbook is not None
         ws = self.workbook.create_sheet("LANEIGE Analysis")
 
@@ -253,5 +308,14 @@ class ExcelReportGenerator:
 
 
 def generate_report(ranking_data: dict[str, pd.DataFrame], output_dir: str = "output") -> str:
+    """랭킹 리포트를 생성하는 헬퍼 함수예요.
+
+    Args:
+        ranking_data: 카테고리별 랭킹 데이터프레임 딕셔너리
+        output_dir: 출력 디렉토리 경로 (기본값: "output")
+
+    Returns:
+        str: 생성된 파일 경로
+    """
     generator = ExcelReportGenerator(output_dir)
     return generator.create_ranking_report(ranking_data)

@@ -1,3 +1,9 @@
+"""인사이트 분석 모듈.
+
+랭킹 데이터를 분석하여 마케팅 인사이트를 생성해요.
+AI(Claude) 또는 규칙 기반으로 인사이트를 제공해요.
+"""
+
 import json
 import os
 from datetime import datetime
@@ -24,18 +30,42 @@ Amazon US 뷰티 제품 랭킹 데이터를 분석하고 마케팅 인사이트�
 
 
 class InsightAnalyzer:
+    """인사이트 분석기.
+
+    랭킹 데이터를 분석하여 성과/마케팅 인사이트를 생성해요.
+    Claude API가 있으면 AI 분석, 없으면 규칙 기반 분석을 수행해요.
+
+    Attributes:
+        vector_store: 제품 벡터 스토어 (RAG용)
+        last_updated: 마지막 업데이트 시간
+        client: Anthropic API 클라이언트
+    """
+
     def __init__(self, vector_store=None):
+        """InsightAnalyzer를 초기화해요.
+
+        Args:
+            vector_store: 제품 벡터 스토어 (기본값: None)
+        """
         self.vector_store = vector_store
-        self.last_updated = None
+        self.last_updated: str | None = None
 
         api_key = os.getenv("ANTHROPIC_API_KEY")
         if api_key:
-            self.client = Anthropic(api_key=api_key)
+            self.client: Anthropic | None = Anthropic(api_key=api_key)
         else:
             self.client = None
             print("Warning: ANTHROPIC_API_KEY not set. Using rule-based insights.")
 
     def analyze(self, ranking_data: dict[str, pd.DataFrame]) -> dict[str, Any]:
+        """랭킹 데이터를 분석하여 인사이트를 생성해요.
+
+        Args:
+            ranking_data: 카테고리별 랭킹 DataFrame
+
+        Returns:
+            dict: 성과 카드, 마케팅 카드, 차트 데이터 포함
+        """
         self.last_updated = datetime.now().isoformat()
 
         ranking_summary = self._summarize_ranking_data(ranking_data)
@@ -47,10 +77,27 @@ class InsightAnalyzer:
             return self._generate_rule_based_insights(ranking_data)
 
     def _summarize_ranking_data(self, ranking_data: dict[str, pd.DataFrame]) -> str:
+        """랭킹 데이터를 텍스트로 요약해요.
+
+        경쟁사 비교, 트렌드 분석, 점유율 등 풍부한 컨텍스트를 생성해요.
+
+        Args:
+            ranking_data: 카테고리별 랭킹 DataFrame
+
+        Returns:
+            str: Claude에게 전달할 요약 텍스트
+        """
         summary_parts = []
+
+        # 전체 요약 통계
+        total_laneige = 0
+        total_top5 = 0
+        all_laneige_ranks = []
+        all_competitor_ranks = []
 
         for category, df in ranking_data.items():
             laneige_df = df[df["is_laneige"]]
+            competitor_df = df[~df["is_laneige"]]
             day_cols = [c for c in df.columns if c.startswith("day_")]
 
             if len(laneige_df) == 0:
@@ -59,6 +106,8 @@ class InsightAnalyzer:
             category_name = category.replace("_", " ").title()
             summary_parts.append(f"\n### {category_name} 카테고리")
 
+            # 라네즈 제품 분석
+            category_laneige_ranks = []
             for _, row in laneige_df.iterrows():
                 product_name = row["product_name"]
                 rankings = [row[col] for col in day_cols if pd.notna(row[col])]
@@ -66,11 +115,20 @@ class InsightAnalyzer:
                 if not rankings:
                     continue
 
+                total_laneige += 1
                 avg_rank = sum(rankings) / len(rankings)
                 best_rank = min(rankings)
-                max(rankings)
+                worst_rank = max(rankings)
                 recent_rank = rankings[-1] if rankings else 0
+                week_ago_rank = rankings[-7] if len(rankings) >= 7 else rankings[0]
 
+                category_laneige_ranks.extend(rankings)
+                all_laneige_ranks.extend(rankings)
+
+                if avg_rank <= 5:
+                    total_top5 += 1
+
+                # 트렌드 계산
                 if len(rankings) >= 14:
                     recent_avg = sum(rankings[-7:]) / 7
                     prev_avg = sum(rankings[-14:-7]) / 7
@@ -84,17 +142,75 @@ class InsightAnalyzer:
 
                 summary_parts.append(
                     f"- {product_name}: 현재 {int(recent_rank)}위, 평균 {avg_rank:.1f}위, "
-                    f"최고 {int(best_rank)}위, TOP5 {top5_days}일, 트렌드: {trend}({trend_value:+.1f})"
+                    f"최고 {int(best_rank)}위, 최저 {int(worst_rank)}위, TOP5 {top5_days}일, 트렌드: {trend}({trend_value:+.1f})"
                 )
 
-            non_laneige = df[~df["is_laneige"]].head(3)
-            if len(non_laneige) > 0:
-                summary_parts.append("\n  주요 경쟁사:")
-                for _, row in non_laneige.iterrows():
+                # 급변동 감지
+                rank_change = week_ago_rank - recent_rank
+                if abs(rank_change) >= 3:
+                    change_type = "급상승 📈" if rank_change > 0 else "급하락 📉"
+                    summary_parts.append(
+                        f"  ⚠️ {change_type}: 7일 전 {int(week_ago_rank)}위 → 현재 {int(recent_rank)}위 ({rank_change:+.0f})"
+                    )
+
+            # 경쟁사 분석
+            competitor_top10 = competitor_df.head(10)
+            category_competitor_ranks = []
+            if len(competitor_top10) > 0:
+                summary_parts.append("\n  **주요 경쟁사 (TOP 10):**")
+                for _, row in competitor_top10.iterrows():
                     rankings = [row[col] for col in day_cols if pd.notna(row[col])]
                     if rankings:
                         avg = sum(rankings) / len(rankings)
-                        summary_parts.append(f"  - {row['product_name'][:40]}: 평균 {avg:.1f}위")
+                        recent = rankings[-1]
+                        category_competitor_ranks.extend(rankings)
+                        all_competitor_ranks.extend(rankings)
+                        summary_parts.append(
+                            f"  - {row['product_name'][:40]} ({row['brand']}): 현재 {int(recent)}위, 평균 {avg:.1f}위"
+                        )
+
+            # 카테고리별 경쟁 우위 분석
+            if category_laneige_ranks and category_competitor_ranks:
+                laneige_avg = sum(category_laneige_ranks) / len(category_laneige_ranks)
+                competitor_avg = sum(category_competitor_ranks) / len(category_competitor_ranks)
+                gap = competitor_avg - laneige_avg
+
+                if gap > 0:
+                    summary_parts.append(
+                        f"\n  **경쟁 우위:** 라네즈 평균 {laneige_avg:.1f}위 vs 경쟁사 TOP10 평균 {competitor_avg:.1f}위 → {gap:.1f}위 앞섬 ✅"
+                    )
+                else:
+                    summary_parts.append(
+                        f"\n  **경쟁 열세:** 라네즈 평균 {laneige_avg:.1f}위 vs 경쟁사 TOP10 평균 {competitor_avg:.1f}위 → {abs(gap):.1f}위 뒤처짐 ⚠️"
+                    )
+
+            # 카테고리 TOP 10 내 라네즈 점유율
+            top10_laneige = len(laneige_df[laneige_df[day_cols[-1]] <= 10]) if day_cols else 0
+            summary_parts.append(f"  **TOP 10 점유율:** {top10_laneige}개 / 10개 ({top10_laneige * 10}%)")
+
+        # 전체 요약
+        summary_parts.insert(0, "## 전체 요약")
+        summary_parts.insert(1, f"- 라네즈 제품 수: {total_laneige}개")
+        summary_parts.insert(
+            2,
+            f"- TOP 5 제품 수: {total_top5}개 ({total_top5 / total_laneige * 100:.0f}%)"
+            if total_laneige > 0
+            else "- TOP 5 제품 수: 0개",
+        )
+
+        if all_laneige_ranks:
+            overall_avg = sum(all_laneige_ranks) / len(all_laneige_ranks)
+            summary_parts.insert(3, f"- 전체 평균 순위: {overall_avg:.1f}위")
+
+        if all_laneige_ranks and all_competitor_ranks:
+            laneige_total_avg = sum(all_laneige_ranks) / len(all_laneige_ranks)
+            competitor_total_avg = sum(all_competitor_ranks) / len(all_competitor_ranks)
+            total_gap = competitor_total_avg - laneige_total_avg
+            status = "우위 ✅" if total_gap > 0 else "열세 ⚠️"
+            summary_parts.insert(
+                4,
+                f"- 전체 경쟁 현황: 라네즈 {laneige_total_avg:.1f}위 vs 경쟁사 {competitor_total_avg:.1f}위 ({status}, {abs(total_gap):.1f}위 차이)",
+            )
 
         return "\n".join(summary_parts)
 

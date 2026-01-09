@@ -1,7 +1,6 @@
-"""
-Ranking Repository
-- Ranking data CRUD operations
-- History retrieval and storage
+"""랭킹 리포지토리 모듈.
+
+랭킹 데이터의 CRUD 작업과 히스토리 조회를 담당해요.
 """
 
 from datetime import date, timedelta
@@ -15,33 +14,49 @@ from .models import RankingHistory
 
 
 class RankingRepository:
-    """Repository class for managing ranking data storage and retrieval."""
+    """랭킹 데이터 저장 및 조회를 관리하는 리포지토리 클래스.
 
-    # Initializes the repository with an optional session.
-    # @param session: SQLAlchemy Session object (optional, created lazily if not provided)
+    데이터베이스에서 랭킹 히스토리를 저장하고 조회하는
+    모든 작업을 담당해요.
+
+    Attributes:
+        _session (Session | None): SQLAlchemy 세션 (지연 초기화)
+    """
+
     def __init__(self, session: Session | None = None):
+        """RankingRepository를 초기화해요.
+
+        Args:
+            session: SQLAlchemy 세션 (기본값: None, 필요시 자동 생성)
+        """
         self._session = session
 
     @property
     def session(self) -> Session:
+        """세션을 반환해요. 없으면 새로 생성해요."""
         if self._session is None:
             self._session = get_session()
         return self._session
 
-    # Closes the database session if it exists.
-    # @return: None
     def close(self):
+        """데이터베이스 세션을 닫아요."""
         if self._session:
             self._session.close()
 
-    # Saves daily ranking data for a specific date and category.
-    # @param ranking_date: The date of the rankings
-    # @param category: Product category (e.g., "lip_care", "skincare")
-    # @param rankings_df: DataFrame containing product_name, brand, rank, is_laneige columns
-    # @return: Number of records saved
-    # Note: Deletes existing data for the same date/category to prevent duplicates.
     def save_daily_rankings(self, ranking_date: date, category: str, rankings_df: pd.DataFrame) -> int:
-        # Delete existing data for this date/category to prevent duplicates
+        """일별 랭킹 데이터를 저장해요.
+
+        중복 방지를 위해 같은 날짜/카테고리의 기존 데이터는 삭제해요.
+
+        Args:
+            ranking_date: 랭킹 날짜
+            category: 카테고리
+            rankings_df: product_name, brand, rank, is_laneige 컬럼이 있는 데이터프레임
+
+        Returns:
+            int: 저장된 레코드 수
+        """
+        # 중복 방지를 위해 기존 데이터 삭제
         self.session.query(RankingHistory).filter(
             RankingHistory.ranking_date == ranking_date, RankingHistory.category == category
         ).delete()
@@ -64,11 +79,16 @@ class RankingRepository:
         self.session.commit()
         return count
 
-    # Retrieves rankings for a specific date, optionally filtered by category.
-    # @param ranking_date: The date to query
-    # @param category: Optional category filter
-    # @return: List of RankingHistory records ordered by rank
     def get_rankings_by_date(self, ranking_date: date, category: str | None = None) -> list[RankingHistory]:
+        """특정 날짜의 랭킹을 조회해요.
+
+        Args:
+            ranking_date: 조회할 날짜
+            category: 카테고리 필터 (선택)
+
+        Returns:
+            list[RankingHistory]: 순위순으로 정렬된 레코드 리스트
+        """
         query = self.session.query(RankingHistory).filter(RankingHistory.ranking_date == ranking_date)
 
         if category:
@@ -77,12 +97,17 @@ class RankingRepository:
         result: list[RankingHistory] = query.order_by(RankingHistory.rank).all()
         return result
 
-    # Retrieves rankings within a date range, optionally filtered by category.
-    # @param start_date: Start date of the range (inclusive)
-    # @param end_date: End date of the range (inclusive)
-    # @param category: Optional category filter
-    # @return: List of RankingHistory records ordered by date, category, and rank
     def get_rankings_range(self, start_date: date, end_date: date, category: str | None = None) -> list[RankingHistory]:
+        """기간 내 랭킹을 조회해요.
+
+        Args:
+            start_date: 시작 날짜 (포함)
+            end_date: 종료 날짜 (포함)
+            category: 카테고리 필터 (선택)
+
+        Returns:
+            list[RankingHistory]: 날짜, 카테고리, 순위순으로 정렬된 레코드 리스트
+        """
         query = self.session.query(RankingHistory).filter(
             RankingHistory.ranking_date >= start_date, RankingHistory.ranking_date <= end_date
         )
@@ -95,12 +120,16 @@ class RankingRepository:
         ).all()
         return result
 
-    # Returns category rankings as a DataFrame with day_1, day_2, ... columns.
-    # @param category: Category to query
-    # @param days: Number of days to retrieve (default: 30)
-    # @return: DataFrame with columns: product_name, brand, is_laneige, day_1, day_2, ...
-    # Note: Each day_N column contains the rank for that day in the period.
     def get_category_rankings_as_df(self, category: str, days: int = 30) -> pd.DataFrame:
+        """카테고리 랭킹을 day_1, day_2, ... 컬럼 형태의 데이터프레임으로 반환해요.
+
+        Args:
+            category: 카테고리
+            days: 조회할 일수 (기본값: 30)
+
+        Returns:
+            pd.DataFrame: product_name, brand, is_laneige, day_1, day_2, ... 컬럼을 가진 데이터프레임
+        """
         end_date = date.today()
         start_date = end_date - timedelta(days=days - 1)
 
@@ -109,11 +138,11 @@ class RankingRepository:
         if not records:
             return pd.DataFrame()
 
-        # Organize data by date
+        # 날짜별 데이터 정리
         date_list = sorted({r.ranking_date for r in records})
         date_to_day = {d: i + 1 for i, d in enumerate(date_list)}
 
-        # Collect data by product
+        # 제품별 데이터 수집
         product_data = {}
         for record in records:
             key = record.product_name
@@ -131,17 +160,22 @@ class RankingRepository:
 
         df = pd.DataFrame(list(product_data.values()))
 
-        # Sort day_N columns
+        # day_N 컬럼 정렬
         base_cols = ["product_id", "product_name", "brand", "is_laneige", "price"]
         day_cols = sorted([c for c in df.columns if c.startswith("day_")], key=lambda x: int(x.split("_")[1]))
         existing_cols = [c for c in base_cols if c in df.columns]
 
         return df[existing_cols + day_cols]
 
-    # Returns rankings for all categories as a dictionary of DataFrames.
-    # @param days: Number of days to retrieve (default: 30)
-    # @return: Dictionary mapping category names to their respective DataFrames
     def get_all_categories_as_df(self, days: int = 30) -> dict[str, pd.DataFrame]:
+        """모든 카테고리의 랭킹을 데이터프레임 딕셔너리로 반환해요.
+
+        Args:
+            days: 조회할 일수 (기본값: 30)
+
+        Returns:
+            dict: 카테고리명을 키로 하는 데이터프레임 딕셔너리
+        """
         categories = self.get_available_categories()
         result = {}
 
@@ -152,16 +186,24 @@ class RankingRepository:
 
         return result
 
-    # Returns a list of all categories that have stored ranking data.
-    # @return: List of category names
     def get_available_categories(self) -> list[str]:
+        """저장된 랭킹 데이터가 있는 카테고리 목록을 반환해요.
+
+        Returns:
+            list[str]: 카테고리명 리스트
+        """
         result = self.session.query(RankingHistory.category).distinct().all()
         return [r[0] for r in result]
 
-    # Returns a list of all dates that have stored ranking data.
-    # @param category: Optional category filter
-    # @return: List of date objects in chronological order
     def get_available_dates(self, category: str | None = None) -> list[date]:
+        """저장된 랭킹 데이터가 있는 날짜 목록을 반환해요.
+
+        Args:
+            category: 카테고리 필터 (선택)
+
+        Returns:
+            list[date]: 날짜순으로 정렬된 날짜 리스트
+        """
         query = self.session.query(RankingHistory.ranking_date).distinct()
 
         if category:
@@ -170,17 +212,25 @@ class RankingRepository:
         result = query.order_by(RankingHistory.ranking_date).all()
         return [r[0] for r in result]
 
-    # Returns the count of distinct dates with stored data.
-    # @return: Integer count of unique dates
     def get_date_count(self) -> int:
+        """저장된 데이터가 있는 고유 날짜 수를 반환해요.
+
+        Returns:
+            int: 고유 날짜 수
+        """
         result = self.session.query(func.count(func.distinct(RankingHistory.ranking_date))).scalar()
         return result or 0
 
-    # Checks if ranking data exists for a specific date.
-    # @param ranking_date: Date to check
-    # @param category: Optional category filter
-    # @return: True if data exists, False otherwise
     def has_data_for_date(self, ranking_date: date, category: str | None = None) -> bool:
+        """특정 날짜에 랭킹 데이터가 있는지 확인해요.
+
+        Args:
+            ranking_date: 확인할 날짜
+            category: 카테고리 필터 (선택)
+
+        Returns:
+            bool: 데이터가 있으면 True, 없으면 False
+        """
         query = self.session.query(RankingHistory).filter(RankingHistory.ranking_date == ranking_date)
 
         if category:
@@ -188,11 +238,16 @@ class RankingRepository:
 
         return query.first() is not None
 
-    # Retrieves detailed ranking history for a specific product.
-    # @param product_name: Name of the product to query
-    # @param days: Number of days to retrieve (default: 30)
-    # @return: Dictionary with rankings list, dates, statistics, and trend; None if no data
     def get_product_history(self, product_name: str, days: int = 30) -> dict | None:
+        """특정 제품의 상세 랭킹 히스토리를 조회해요.
+
+        Args:
+            product_name: 제품명
+            days: 조회할 일수 (기본값: 30)
+
+        Returns:
+            dict | None: 랭킹 리스트, 날짜, 통계, 트렌드 정보 또는 데이터가 없으면 None
+        """
         end_date = date.today()
         start_date = end_date - timedelta(days=days - 1)
 
@@ -225,11 +280,16 @@ class RankingRepository:
             "trend": "rising" if ranks[-1] < ranks[0] else "declining",
         }
 
-    # Returns ranking summary statistics for LANEIGE products in a category.
-    # @param category: Category to query
-    # @param days: Number of days to analyze (default: 30)
-    # @return: Dictionary mapping product names to their statistics (avg, best, worst rank, etc.)
     def get_laneige_summary(self, category: str, days: int = 30) -> dict:
+        """LANEIGE 제품의 랭킹 요약 통계를 반환해요.
+
+        Args:
+            category: 카테고리
+            days: 분석할 일수 (기본값: 30)
+
+        Returns:
+            dict: 제품명을 키로 하는 통계 딕셔너리 (avg, best, worst 순위 등)
+        """
         df = self.get_category_rankings_as_df(category, days)
 
         if len(df) == 0:

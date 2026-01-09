@@ -1,3 +1,9 @@
+"""Amazon PA-API 랭킹 프로바이더 모듈.
+
+Amazon Product Advertising API를 활용하여
+실시간 베스트셀러 랭킹 데이터를 수집해요.
+"""
+
 import hashlib
 import hmac
 import json
@@ -10,6 +16,19 @@ from .base import RankingProvider
 
 
 class PAAPIRankingProvider(RankingProvider):
+    """Amazon PA-API 기반 랭킹 데이터 프로바이더.
+
+    Amazon Product Advertising API v5를 사용하여
+    실시간 베스트셀러 랭킹을 수집해요.
+
+    Attributes:
+        access_key (str): AWS Access Key
+        secret_key (str): AWS Secret Key
+        partner_tag (str): Amazon Associates Partner Tag
+        region (str): AWS 리전
+        marketplace (str): Amazon 마켓플레이스 URL
+    """
+
     CATEGORY_NODE_IDS = {
         "lip_care": "11062741",
         "skincare": "11062031",
@@ -25,6 +44,15 @@ class PAAPIRankingProvider(RankingProvider):
         region: str = "us-east-1",
         marketplace: str = "www.amazon.com",
     ):
+        """PAAPIRankingProvider를 초기화해요.
+
+        Args:
+            access_key: AWS Access Key ID
+            secret_key: AWS Secret Access Key
+            partner_tag: Amazon Associates Partner Tag
+            region: AWS 리전 (기본값: us-east-1)
+            marketplace: Amazon 마켓플레이스 (기본값: www.amazon.com)
+        """
         self.access_key = access_key
         self.secret_key = secret_key
         self.partner_tag = partner_tag
@@ -38,13 +66,23 @@ class PAAPIRankingProvider(RankingProvider):
 
     @property
     def provider_name(self) -> str:
+        """프로바이더 이름을 반환해요."""
         return "paapi"
 
     @property
     def is_live_data(self) -> bool:
+        """실시간 데이터 여부를 반환해요."""
         return True
 
     def _sign_request(self, payload: dict) -> dict:
+        """AWS Signature Version 4로 요청을 서명해요.
+
+        Args:
+            payload: API 요청 페이로드
+
+        Returns:
+            dict: 서명된 HTTP 헤더
+        """
         t = datetime.utcnow()
         amz_date = t.strftime("%Y%m%dT%H%M%SZ")
         date_stamp = t.strftime("%Y%m%d")
@@ -92,6 +130,15 @@ class PAAPIRankingProvider(RankingProvider):
         return headers
 
     def _fetch_best_sellers(self, category: str, page: int = 1) -> list[dict]:
+        """PA-API로 베스트셀러 목록을 가져와요.
+
+        Args:
+            category: Amazon 카테고리 이름
+            page: 페이지 번호 (기본값: 1)
+
+        Returns:
+            list[dict]: API에서 반환된 상품 목록
+        """
         node_id = self.CATEGORY_NODE_IDS.get(category)
         if not node_id:
             print(f"Unknown category: {category}")
@@ -132,6 +179,16 @@ class PAAPIRankingProvider(RankingProvider):
             return []
 
     def _parse_items_to_rankings(self, items: list[dict], category: str, start_rank: int = 1) -> list[dict]:
+        """API 응답을 랭킹 데이터 형식으로 파싱해요.
+
+        Args:
+            items: PA-API에서 반환된 상품 목록
+            category: Amazon 카테고리 이름
+            start_rank: 시작 순위 (기본값: 1)
+
+        Returns:
+            list[dict]: 파싱된 랭킹 데이터 목록
+        """
         results = []
 
         for i, item in enumerate(items):
@@ -178,6 +235,15 @@ class PAAPIRankingProvider(RankingProvider):
         return results
 
     def get_rankings(self, category: str, days: int = 30) -> pd.DataFrame:
+        """카테고리의 랭킹 데이터를 조회해요.
+
+        Args:
+            category: Amazon 카테고리 이름
+            days: 조회할 일수 (기본값: 30, 실시간 데이터라 실제로는 오늘 데이터만 반환)
+
+        Returns:
+            pd.DataFrame: 랭킹 데이터프레임
+        """
         today = datetime.now().strftime("%Y-%m-%d")
         cache_key = f"{category}_{today}"
 
@@ -205,6 +271,14 @@ class PAAPIRankingProvider(RankingProvider):
         return df
 
     def get_all_categories(self, days: int = 30) -> dict[str, pd.DataFrame]:
+        """모든 카테고리의 랭킹 데이터를 조회해요.
+
+        Args:
+            days: 조회할 일수 (기본값: 30)
+
+        Returns:
+            dict: 카테고리명을 키로 하는 랭킹 데이터프레임 딕셔너리
+        """
         results = {}
 
         for category in self.CATEGORY_NODE_IDS:
@@ -215,6 +289,15 @@ class PAAPIRankingProvider(RankingProvider):
         return results
 
     def get_product_ranking_history(self, product_name: str, days: int = 30) -> dict | None:
+        """특정 제품의 랭킹 히스토리를 조회해요.
+
+        Args:
+            product_name: 제품명
+            days: 조회할 일수 (기본값: 30)
+
+        Returns:
+            dict | None: 랭킹 히스토리 정보 또는 None (제품을 찾지 못한 경우)
+        """
         all_rankings = self.get_all_categories(days)
 
         for category, df in all_rankings.items():
@@ -238,6 +321,14 @@ class PAAPIRankingProvider(RankingProvider):
         return None
 
     def get_laneige_summary(self, category: str) -> dict:
+        """LANEIGE 제품의 랭킹 요약 정보를 조회해요.
+
+        Args:
+            category: Amazon 카테고리 이름
+
+        Returns:
+            dict: 제품별 평균순위, 최고순위, 트렌드 등 요약 정보
+        """
         df = self.get_rankings(category)
 
         if len(df) == 0:
@@ -267,6 +358,11 @@ class PAAPIRankingProvider(RankingProvider):
         return summary
 
     def get_today_rankings(self) -> dict[str, pd.DataFrame]:
+        """오늘의 랭킹 데이터를 수집해요.
+
+        Returns:
+            dict: 카테고리별 오늘의 랭킹 데이터프레임 딕셔너리
+        """
         results = {}
 
         for category in self.CATEGORY_NODE_IDS:

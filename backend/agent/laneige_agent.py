@@ -10,6 +10,7 @@ from dotenv import load_dotenv
 from langchain_anthropic import ChatAnthropic
 from langchain_core.messages import HumanMessage
 from langgraph.prebuilt import create_react_agent
+from pydantic import SecretStr
 
 from .prompts import SYSTEM_PROMPT, WELCOME_MESSAGE
 from .tools import create_analysis_tools, create_product_tools, create_ranking_tools
@@ -61,7 +62,7 @@ class LaneigeAgent:
             self.agent = None
             return
 
-        self.llm = ChatAnthropic(model=model, api_key=api_key)
+        self.llm = ChatAnthropic(model_name=model, api_key=SecretStr(api_key))
 
         self.tools = self._create_tools()
 
