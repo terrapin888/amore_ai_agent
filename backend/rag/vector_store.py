@@ -151,7 +151,7 @@ class ProductVectorStore:
         results = self.collection.query(
             query_embeddings=query_embedding,
             n_results=n_results,
-            where=where if where else None,
+            where=where if where else None,  # type: ignore[arg-type]
             include=["documents", "metadatas", "distances"],
         )
 
