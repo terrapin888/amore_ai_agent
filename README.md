@@ -60,12 +60,13 @@ Amazon Product Advertising API(PA-API 5.0)를 통해 실시간 랭킹 데이터�
 
 ### AI 대화형 분석
 
-RAG (Retrieval-Augmented Generation) 기반으로 자연어 질문에 대한 AI 인사이트를 제공합니다.
+**LangChain Agent** 기반으로 자연어 질문에 대한 AI 인사이트를 제공합니다.
 
 **기술 구성:**
+- **LangGraph ReAct Agent**: AI가 질문에 따라 적절한 도구를 자동 선택
+- **9가지 전문 Tool**: 제품 검색, 랭킹 조회, 경쟁사 비교, 트렌드 분석 등
+- **멀티스텝 추론**: 복잡한 질문에 대해 여러 도구를 순차적으로 활용
 - Vector DB(ChromaDB)에서 관련 제품 정보 검색
-- 랭킹 데이터와 제품 특성을 결합한 맥락적 분석
-- LLM API를 통한 고품질 추론
 
 ---
 
@@ -83,7 +84,7 @@ graph TB
 
     subgraph "Backend API"
         G[FastAPI Server] --> H[Ranking Service]
-        G --> I[Chat Engine]
+        G --> I[LangChain Agent]
         G --> J[Insight Analyzer]
         G --> K[Report Generator]
     end
@@ -93,6 +94,7 @@ graph TB
         H --> M[(SQLite DB)]
         I --> N[Vector Store<br/>ChromaDB]
         I --> O[Claude API]
+        I --> P[Agent Tools]
         J --> O
     end
 
@@ -122,10 +124,12 @@ sequenceDiagram
 
     U->>W: AI 질문 입력
     W->>F: POST /api/chat
-    F->>V: 관련 제품 검색
-    V-->>F: 컨텍스트 반환
-    F->>C: RAG 질의
-    C-->>F: AI 응답
+    F->>C: Agent 실행
+    C->>V: Tool: 제품 검색
+    V-->>C: 검색 결과
+    C->>D: Tool: 랭킹 조회
+    D-->>C: 랭킹 데이터
+    C-->>F: 종합 분석 응답
     F-->>W: 인사이트 응답
     W-->>U: 분석 결과 표시
 ```
@@ -220,7 +224,16 @@ Claude API 기반 RAG 시스템으로 심층 분석을 제공합니다.
 
 ### AI 채팅
 
-자연어로 랭킹 데이터에 대해 질문하고 인사이트를 얻을 수 있습니다.
+**LangChain Agent**가 자연어 질문을 분석하고 적절한 도구를 선택하여 인사이트를 제공합니다.
+
+**Agent가 사용하는 Tool:**
+- `search_products`: 제품 정보 검색
+- `search_laneige_products`: LANEIGE 제품 검색
+- `get_product_history`: 제품 순위 히스토리 조회
+- `get_category_rankings`: 카테고리별 랭킹 조회
+- `get_laneige_summary`: LANEIGE 성과 요약
+- `compare_competitors`: 경쟁사 비교 분석
+- `analyze_trend`: 트렌드 분석
 
 **질문 예시:**
 - "립 슬리핑 마스크 순위가 왜 떨어졌어?"
@@ -246,6 +259,7 @@ Claude API 기반 RAG 시스템으로 심층 분석을 제공합니다.
 | **Runtime** | Python 3.10+ | 메인 런타임 |
 | **Framework** | FastAPI | REST API 서버 |
 | **LLM** | Claude API (Anthropic) | 대화형 분석 생성 |
+| **Agent** | LangChain + LangGraph | ReAct Agent 기반 멀티스텝 추론 |
 | **Vector DB** | ChromaDB | 시맨틱 검색용 벡터 저장소 |
 | **Embedding** | Sentence-Transformers | 텍스트 임베딩 (`all-MiniLM-L6-v2`) |
 | **Data** | Pandas | 데이터 처리 및 분석 |
@@ -270,6 +284,6 @@ Claude API 기반 RAG 시스템으로 심층 분석을 제공합니다.
 <div align="center">
 
 **LANEIGE Ranking Insight Agent**
-*Powered by Claude API + ChromaDB + Sentence-Transformers*
+*Powered by LangChain Agent + Claude API + ChromaDB*
 
 </div>
