@@ -77,7 +77,7 @@ class PAAPIRankingProvider(RankingProvider):
         credential_scope = f"{date_stamp}/{self.region}/{service}/aws4_request"
         string_to_sign = f"{algorithm}\n{amz_date}\n{credential_scope}\n{hashlib.sha256(canonical_request.encode('utf-8')).hexdigest()}"
 
-        def sign(key, msg):
+        def sign(key: bytes, msg: str) -> bytes:
             return hmac.new(key, msg.encode("utf-8"), hashlib.sha256).digest()
 
         k_date = sign(("AWS4" + self.secret_key).encode("utf-8"), date_stamp)
@@ -121,7 +121,7 @@ class PAAPIRankingProvider(RankingProvider):
 
             if response.status_code == 200:
                 data = response.json()
-                items = data.get("SearchResult", {}).get("Items", [])
+                items: list[dict] = data.get("SearchResult", {}).get("Items", [])
                 return items
             else:
                 print(f"PA API Error: {response.status_code} - {response.text}")

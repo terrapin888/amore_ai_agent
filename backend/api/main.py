@@ -7,7 +7,9 @@ FastAPI 기반 REST API 서버로 랭킹 분석, AI 채팅,
 import math
 import os
 import sys
+from typing import Any
 
+import pandas as pd
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse
@@ -21,6 +23,7 @@ from backend.db import init_db
 from backend.insights import InsightAnalyzer
 from backend.rag.vector_store import ProductVectorStore
 from backend.ranking import RankingService, get_ranking_provider
+from backend.ranking.base import RankingProvider
 from backend.report.excel_generator import ExcelReportGenerator
 
 app = FastAPI(
@@ -37,18 +40,18 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-products_df = None
-ranking_provider = None
-ranking_service = None
-vector_store = None
-chat_engine = None
-insight_analyzer = None
-ranking_data_cache = None
-insights_cache = None
-is_initialized = False
+products_df: pd.DataFrame | None = None
+ranking_provider: RankingProvider | None = None
+ranking_service: RankingService | None = None
+vector_store: ProductVectorStore | None = None
+chat_engine: ChatEngine | None = None
+insight_analyzer: InsightAnalyzer | None = None
+ranking_data_cache: dict[str, pd.DataFrame] | None = None
+insights_cache: dict[str, Any] | None = None
+is_initialized: bool = False
 
 
-def refresh_ranking_cache(days: int = 30):
+def refresh_ranking_cache(days: int = 30) -> dict[str, pd.DataFrame]:
     """랭킹 캐시를 갱신해요.
 
     Args:
@@ -58,6 +61,9 @@ def refresh_ranking_cache(days: int = 30):
         dict: 카테고리별 랭킹 데이터
     """
     global ranking_data_cache, insights_cache
+
+    assert ranking_service is not None
+    assert ranking_provider is not None
 
     print("Checking today's ranking data...")
     was_collected = ranking_service.ensure_today_data()
@@ -150,7 +156,7 @@ class RankingResponse(BaseModel):
 
 
 @app.on_event("startup")
-async def startup_event():
+async def startup_event() -> None:
     global products_df, ranking_provider, ranking_service, vector_store, chat_engine, insight_analyzer, is_initialized
 
     print("=" * 50)
@@ -195,13 +201,13 @@ async def startup_event():
 
 
 @app.get("/")
-async def root():
+async def root() -> dict[str, Any]:
     return {"status": "ok", "message": "Laneige Ranking Insight API is running", "initialized": is_initialized}
 
 
 @app.get("/api/products", response_model=list[dict])
-async def get_products(category: str | None = None, laneige_only: bool = False, limit: int = 100):
-    if not is_initialized:
+async def get_products(category: str | None = None, laneige_only: bool = False, limit: int = 100) -> list[dict]:
+    if not is_initialized or products_df is None:
         raise HTTPException(status_code=503, detail="Server not initialized")
 
     df = products_df.copy()
@@ -214,25 +220,27 @@ async def get_products(category: str | None = None, laneige_only: bool = False, 
 
     df = df.head(limit)
 
-    return df.to_dict(orient="records")
+    result: list[dict] = df.to_dict(orient="records")
+    return result
 
 
 @app.get("/api/products/laneige")
-async def get_laneige_products():
-    if not is_initialized:
+async def get_laneige_products() -> list[dict]:
+    if not is_initialized or products_df is None:
         raise HTTPException(status_code=503, detail="Server not initialized")
 
     laneige = products_df[products_df["is_laneige"]]
-    return laneige.to_dict(orient="records")
+    result: list[dict] = laneige.to_dict(orient="records")
+    return result
 
 
 @app.get("/api/rankings")
-async def get_rankings(category: str = "all", days: int = 30):
-    if not is_initialized:
+async def get_rankings(category: str = "all", days: int = 30) -> dict[str, Any]:
+    if not is_initialized or ranking_data_cache is None:
         raise HTTPException(status_code=503, detail="Server not initialized")
 
     if category == "all":
-        result = {}
+        result: dict[str, Any] = {}
         for cat, df in ranking_data_cache.items():
             result[cat] = df.to_dict(orient="records")
         return result
@@ -244,11 +252,11 @@ async def get_rankings(category: str = "all", days: int = 30):
 
 
 @app.get("/api/rankings/summary")
-async def get_ranking_summary():
-    if not is_initialized:
+async def get_ranking_summary() -> dict[str, Any]:
+    if not is_initialized or ranking_data_cache is None or ranking_service is None:
         raise HTTPException(status_code=503, detail="Server not initialized")
 
-    summaries = {}
+    summaries: dict[str, Any] = {}
     for category in ranking_data_cache:
         summaries[category] = ranking_service.get_laneige_summary(category)
 
@@ -256,12 +264,12 @@ async def get_ranking_summary():
 
 
 @app.get("/api/rankings/chart-data")
-async def get_chart_data(days: int = 30):
-    if not is_initialized:
+async def get_chart_data(days: int = 30) -> list[dict[str, Any]]:
+    if not is_initialized or ranking_data_cache is None:
         raise HTTPException(status_code=503, detail="Server not initialized")
 
     ranking_data = ranking_data_cache
-    chart_data = []
+    chart_data: list[dict[str, Any]] = []
 
     first_category = list(ranking_data.values())[0]
     date_columns = [col for col in first_category.columns if col.startswith("day_")]
@@ -282,8 +290,8 @@ async def get_chart_data(days: int = 30):
 
 
 @app.post("/api/chat", response_model=ChatResponse)
-async def chat(request: ChatRequest):
-    if not is_initialized:
+async def chat(request: ChatRequest) -> ChatResponse:
+    if not is_initialized or chat_engine is None:
         raise HTTPException(status_code=503, detail="Server not initialized")
 
     response = chat_engine.chat(request.message)
@@ -292,13 +300,13 @@ async def chat(request: ChatRequest):
 
 
 @app.get("/api/reports")
-async def list_reports():
+async def list_reports() -> list[dict[str, Any]]:
     output_dir = "output"
 
     if not os.path.exists(output_dir):
         return []
 
-    reports = []
+    reports: list[dict[str, Any]] = []
     for filename in os.listdir(output_dir):
         if filename.endswith(".xlsx"):
             filepath = os.path.join(output_dir, filename)
@@ -313,8 +321,8 @@ async def list_reports():
 
 
 @app.post("/api/reports/generate")
-async def generate_report(request: ReportGenerateRequest):
-    if not is_initialized:
+async def generate_report(request: ReportGenerateRequest) -> dict[str, Any]:
+    if not is_initialized or ranking_data_cache is None:
         raise HTTPException(status_code=503, detail="Server not initialized")
 
     generator = ExcelReportGenerator()
@@ -324,7 +332,7 @@ async def generate_report(request: ReportGenerateRequest):
 
 
 @app.get("/api/reports/download/{filename}")
-async def download_report(filename: str):
+async def download_report(filename: str) -> FileResponse:
     filepath = os.path.join("output", filename)
 
     if not os.path.exists(filepath):
@@ -336,8 +344,8 @@ async def download_report(filename: str):
 
 
 @app.post("/api/vectordb/sync")
-async def sync_vector_db():
-    if not is_initialized:
+async def sync_vector_db() -> dict[str, Any]:
+    if not is_initialized or ranking_service is None or vector_store is None:
         raise HTTPException(status_code=503, detail="Server not initialized")
 
     print("Force collecting today's rankings...")
@@ -358,16 +366,16 @@ async def sync_vector_db():
 
 
 @app.get("/api/db/stats")
-async def get_db_stats():
-    if not is_initialized:
+async def get_db_stats() -> dict[str, Any]:
+    if not is_initialized or ranking_service is None:
         raise HTTPException(status_code=503, detail="Server not initialized")
 
     return ranking_service.get_stats()
 
 
 @app.get("/api/insights")
-async def get_insights():
-    if not is_initialized:
+async def get_insights() -> dict[str, Any]:
+    if not is_initialized or insight_analyzer is None or ranking_data_cache is None:
         raise HTTPException(status_code=503, detail="Server not initialized")
 
     if insights_cache is None:
@@ -377,8 +385,8 @@ async def get_insights():
 
 
 @app.get("/api/stats")
-async def get_stats():
-    if not is_initialized:
+async def get_stats() -> dict[str, Any]:
+    if not is_initialized or products_df is None or ranking_data_cache is None:
         raise HTTPException(status_code=503, detail="Server not initialized")
 
     total_products = len(products_df)
@@ -393,18 +401,18 @@ async def get_stats():
             if avg_rank <= 5:
                 top5_count += 1
 
-    avg_ranks = []
+    avg_ranks: list[float] = []
     for _category, df in ranking_data_cache.items():
         laneige = df[df["is_laneige"]]
         for _, row in laneige.iterrows():
             avg_rank = row[[c for c in df.columns if c.startswith("day_")]].mean()
             if not math.isnan(avg_rank):
-                avg_ranks.append(avg_rank)
+                avg_ranks.append(float(avg_rank))
 
-    overall_avg_rank = sum(avg_ranks) / len(avg_ranks) if avg_ranks else 0
+    overall_avg_rank = sum(avg_ranks) / len(avg_ranks) if avg_ranks else 0.0
 
     if math.isnan(overall_avg_rank):
-        overall_avg_rank = 0
+        overall_avg_rank = 0.0
 
     return {
         "total_products": int(total_products),

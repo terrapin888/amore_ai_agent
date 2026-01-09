@@ -82,7 +82,7 @@ class ProductVectorStore:
 
         return "\n".join(parts)
 
-    def add_products(self, products_df: pd.DataFrame, batch_size: int = 100):
+    def add_products(self, products_df: pd.DataFrame, batch_size: int = 100) -> None:
         """제품 데이터를 벡터 스토어에 추가해요.
 
         Args:
@@ -141,7 +141,7 @@ class ProductVectorStore:
         """
         query_embedding = self.embedding_model.encode([query]).tolist()
 
-        where = {}
+        where: dict[str, bool | str] = {}
         if filter_laneige is not None:
             where["is_laneige"] = filter_laneige
         if filter_category:
@@ -155,13 +155,16 @@ class ProductVectorStore:
         )
 
         search_results = []
-        if results and results["documents"]:
-            for i, doc in enumerate(results["documents"][0]):
+        documents = results.get("documents")
+        metadatas = results.get("metadatas")
+        distances = results.get("distances")
+        if documents and metadatas and distances:
+            for i, doc in enumerate(documents[0]):
                 result = {
                     "document": doc,
-                    "metadata": results["metadatas"][0][i],
-                    "distance": results["distances"][0][i],
-                    "relevance_score": 1 - results["distances"][0][i],
+                    "metadata": metadatas[0][i],
+                    "distance": distances[0][i],
+                    "relevance_score": 1 - distances[0][i],
                 }
                 search_results.append(result)
 
@@ -170,10 +173,11 @@ class ProductVectorStore:
     def search_similar_products(self, product_name: str, n_results: int = 5) -> list[dict]:
         results = self.collection.query(query_texts=[product_name], n_results=1)
 
-        if not results or not results["documents"][0]:
+        documents = results.get("documents")
+        if not documents or not documents[0]:
             return []
 
-        product_doc = results["documents"][0][0]
+        product_doc = documents[0][0]
         return self.search(product_doc, n_results=n_results + 1)[1:]
 
     def get_product_context(self, query: str, n_results: int = 3) -> str:
@@ -191,7 +195,7 @@ class ProductVectorStore:
 
         return "\n".join(context_parts)
 
-    def update_with_ranking_data(self, ranking_data: dict[str, pd.DataFrame]):
+    def update_with_ranking_data(self, ranking_data: dict[str, pd.DataFrame]) -> int:
         print("Updating vector store with ranking data...")
         updated_count = 0
 
@@ -273,14 +277,14 @@ class ProductVectorStore:
         print(f"Vector store updated: {updated_count} products with ranking data")
         return updated_count
 
-    def clear(self):
+    def clear(self) -> None:
         self.client.delete_collection(self.collection.name)
         self.collection = self.client.create_collection(
             name=self.collection.name, metadata={"description": "Beauty product information for RAG"}
         )
 
     def count(self) -> int:
-        return self.collection.count()
+        return int(self.collection.count())
 
 
 def build_vector_store(products_df: pd.DataFrame, persist_dir: str = "data/chroma_db") -> ProductVectorStore:

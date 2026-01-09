@@ -76,7 +76,7 @@ class ChatEngine:
         if not self.vector_store:
             return ""
 
-        return self.vector_store.get_product_context(query, n_results=5)
+        return str(self.vector_store.get_product_context(query, n_results=5))
 
     def _get_ranking_context(self, query: str) -> str:
         """랭킹 컨텍스트를 조회해요.
@@ -195,7 +195,7 @@ class ChatEngine:
 
         self.conversation_history.append({"role": "user", "content": full_prompt})
 
-        if self.client:
+        if self.client is not None:
             try:
                 response = self.client.messages.create(
                     model=self.model, max_tokens=2048, system=SYSTEM_PROMPT, messages=self.conversation_history
@@ -208,7 +208,7 @@ class ChatEngine:
 
         self.conversation_history.append({"role": "assistant", "content": assistant_message})
 
-        return assistant_message
+        return str(assistant_message)
 
     def _mock_response(self, query: str) -> str:
         query_lower = query.lower()
@@ -258,7 +258,7 @@ TOP 3 내 안정적인 순위를 유지하고 있습니다.
 
 실제 분석을 위해서는 .env 파일에 ANTHROPIC_API_KEY를 설정해주세요."""
 
-    def clear_history(self):
+    def clear_history(self) -> None:
         self.conversation_history = []
 
     def get_welcome_message(self) -> str:

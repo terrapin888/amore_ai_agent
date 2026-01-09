@@ -17,7 +17,7 @@ class ExcelReportGenerator:
     def __init__(self, output_dir: str = "output"):
         self.output_dir = Path(output_dir)
         self.output_dir.mkdir(exist_ok=True)
-        self.workbook = None
+        self.workbook: Workbook | None = None
 
     def create_ranking_report(self, ranking_data: dict[str, pd.DataFrame], filename: str | None = None) -> str:
         if filename is None:
@@ -25,7 +25,8 @@ class ExcelReportGenerator:
             filename = f"ranking_report_{timestamp}.xlsx"
 
         self.workbook = Workbook()
-        self.workbook.remove(self.workbook.active)
+        if self.workbook.active:
+            self.workbook.remove(self.workbook.active)
 
         self._create_summary_sheet(ranking_data)
 
@@ -36,6 +37,7 @@ class ExcelReportGenerator:
         self._create_laneige_sheet(ranking_data)
 
         filepath = self.output_dir / filename
+        assert self.workbook is not None
         self.workbook.save(filepath)
 
         return str(filepath)
@@ -43,7 +45,8 @@ class ExcelReportGenerator:
     def _get_day_columns(self, df: pd.DataFrame) -> list:
         return sorted([c for c in df.columns if c.startswith("day_")], key=lambda x: int(x.split("_")[1]))
 
-    def _create_summary_sheet(self, ranking_data: dict[str, pd.DataFrame]):
+    def _create_summary_sheet(self, ranking_data: dict[str, pd.DataFrame]) -> None:
+        assert self.workbook is not None
         ws = self.workbook.create_sheet("Summary", 0)
 
         ws["A1"] = "LANEIGE Ranking Report"
@@ -75,14 +78,14 @@ class ExcelReportGenerator:
             total_products = len(df)
             laneige_products = len(laneige_df)
 
-            best_rank = "-"
-            avg_rank = "-"
+            best_rank: int | str = "-"
+            avg_rank: float | str = "-"
             if len(laneige_df) > 0 and day_cols:
-                all_ranks = []
+                all_ranks: list[float] = []
                 for _, row_data in laneige_df.iterrows():
                     for col in day_cols:
                         if pd.notna(row_data[col]):
-                            all_ranks.append(row_data[col])
+                            all_ranks.append(float(row_data[col]))
                 if all_ranks:
                     best_rank = int(min(all_ranks))
                     avg_rank = round(sum(all_ranks) / len(all_ranks), 1)
@@ -105,7 +108,8 @@ class ExcelReportGenerator:
         ws.column_dimensions["D"].width = 18
         ws.column_dimensions["E"].width = 18
 
-    def _create_category_sheet(self, category: str, df: pd.DataFrame):
+    def _create_category_sheet(self, category: str, df: pd.DataFrame) -> None:
+        assert self.workbook is not None
         sheet_name = category.replace("_", " ").title()[:31]
         ws = self.workbook.create_sheet(sheet_name)
 
@@ -178,7 +182,8 @@ class ExcelReportGenerator:
                 )
                 ws.conditional_formatting.add(range_str, color_scale)
 
-    def _create_laneige_sheet(self, ranking_data: dict[str, pd.DataFrame]):
+    def _create_laneige_sheet(self, ranking_data: dict[str, pd.DataFrame]) -> None:
+        assert self.workbook is not None
         ws = self.workbook.create_sheet("LANEIGE Analysis")
 
         ws["A1"] = "LANEIGE Products Performance"
@@ -243,8 +248,8 @@ class ExcelReportGenerator:
             row += 2
 
         ws.column_dimensions["A"].width = 40
-        for col in "BCDEF":
-            ws.column_dimensions[col].width = 15
+        for col_letter in "BCDEF":
+            ws.column_dimensions[col_letter].width = 15
 
 
 def generate_report(ranking_data: dict[str, pd.DataFrame], output_dir: str = "output") -> str:

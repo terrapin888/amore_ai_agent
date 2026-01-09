@@ -74,7 +74,8 @@ class RankingRepository:
         if category:
             query = query.filter(RankingHistory.category == category)
 
-        return query.order_by(RankingHistory.rank).all()
+        result: list[RankingHistory] = query.order_by(RankingHistory.rank).all()
+        return result
 
     # Retrieves rankings within a date range, optionally filtered by category.
     # @param start_date: Start date of the range (inclusive)
@@ -89,7 +90,10 @@ class RankingRepository:
         if category:
             query = query.filter(RankingHistory.category == category)
 
-        return query.order_by(RankingHistory.ranking_date, RankingHistory.category, RankingHistory.rank).all()
+        result: list[RankingHistory] = query.order_by(
+            RankingHistory.ranking_date, RankingHistory.category, RankingHistory.rank
+        ).all()
+        return result
 
     # Returns category rankings as a DataFrame with day_1, day_2, ... columns.
     # @param category: Category to query

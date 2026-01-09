@@ -87,7 +87,7 @@ class InsightAnalyzer:
                     f"최고 {int(best_rank)}위, TOP5 {top5_days}일, 트렌드: {trend}({trend_value:+.1f})"
                 )
 
-            non_laneige = df[not df["is_laneige"]].head(3)
+            non_laneige = df[~df["is_laneige"]].head(3)
             if len(non_laneige) > 0:
                 summary_parts.append("\n  주요 경쟁사:")
                 for _, row in non_laneige.iterrows():
@@ -104,7 +104,7 @@ class InsightAnalyzer:
 
         try:
             context = self.vector_store.get_product_context("라네즈 제품 특징 성분 마케팅", n_results=5)
-            return context
+            return str(context)
         except Exception as e:
             print(f"RAG context error: {e}")
             return ""
@@ -168,6 +168,7 @@ class InsightAnalyzer:
 JSON만 출력하세요."""
 
         try:
+            assert self.client is not None
             response = self.client.messages.create(
                 model="claude-sonnet-4-20250514",
                 max_tokens=4096,
@@ -182,7 +183,7 @@ JSON만 출력하세요."""
                 if response_text.startswith("json"):
                     response_text = response_text[4:]
 
-            insights = json.loads(response_text)
+            insights: dict[str, Any] = json.loads(response_text)
             insights["lastUpdated"] = self.last_updated
 
             return insights
