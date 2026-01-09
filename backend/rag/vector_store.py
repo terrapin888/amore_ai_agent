@@ -271,7 +271,10 @@ class ProductVectorStore:
                 embedding: list[float] = self.embedding_model.encode([document]).tolist()[0]
 
                 self.collection.upsert(
-                    ids=[product_id], documents=[document], metadatas=[metadata], embeddings=[embedding]  # type: ignore[arg-type]
+                    ids=[product_id],
+                    documents=[document],
+                    metadatas=[metadata],
+                    embeddings=[embedding],  # type: ignore[arg-type]
                 )
                 updated_count += 1
 
