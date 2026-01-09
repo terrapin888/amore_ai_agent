@@ -191,11 +191,12 @@ class ExcelReportGenerator:
                 value = row_data.get(day_col)
                 cell = ws.cell(row=row_idx, column=col_idx)
 
-                if pd.notna(value):
-                    cell.value = int(value)
-                    if value <= 5:
+                if pd.notna(value) and value is not None:
+                    int_value = int(value)
+                    cell.value = int_value
+                    if int_value <= 5:
                         cell.font = Font(bold=True, color="006400")
-                    elif value <= 10:
+                    elif int_value <= 10:
                         cell.font = Font(bold=True, color="0000FF")
                 else:
                     cell.value = "-"

@@ -62,7 +62,7 @@ class LaneigeAgent:
             self.agent = None
             return
 
-        self.llm = ChatAnthropic(model_name=model, api_key=SecretStr(api_key))
+        self.llm = ChatAnthropic(model_name=model, api_key=SecretStr(api_key))  # type: ignore[call-arg]
 
         self.tools = self._create_tools()
 

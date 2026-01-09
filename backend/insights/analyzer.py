@@ -292,7 +292,7 @@ JSON만 출력하세요."""
                 messages=[{"role": "user", "content": prompt}],
             )
 
-            response_text = response.content[0].text.strip()
+            response_text = response.content[0].text.strip()  # type: ignore[union-attr]
 
             if response_text.startswith("```"):
                 response_text = response_text.split("```")[1]

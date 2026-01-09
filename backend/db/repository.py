@@ -139,7 +139,7 @@ class RankingRepository:
             return pd.DataFrame()
 
         # 날짜별 데이터 정리
-        date_list = sorted({r.ranking_date for r in records})
+        date_list = sorted({r.ranking_date for r in records})  # type: ignore[type-var]
         date_to_day = {d: i + 1 for i, d in enumerate(date_list)}
 
         # 제품별 데이터 수집
@@ -275,8 +275,8 @@ class RankingRepository:
             "rankings": ranks,
             "dates": [r.ranking_date.isoformat() for r in records],
             "avg_rank": round(sum(ranks) / len(ranks), 1),
-            "best_rank": min(ranks),
-            "worst_rank": max(ranks),
+            "best_rank": min(ranks),  # type: ignore[type-var]
+            "worst_rank": max(ranks),  # type: ignore[type-var]
             "trend": "rising" if ranks[-1] < ranks[0] else "declining",
         }
 
