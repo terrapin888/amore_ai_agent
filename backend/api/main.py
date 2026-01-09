@@ -17,11 +17,10 @@ from pydantic import BaseModel
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
 
-from backend.chat.chat_engine import ChatEngine
+from backend.agent import LaneigeAgent, ProductVectorStore
 from backend.data.loader import load_all_products
 from backend.db import init_db
 from backend.insights import InsightAnalyzer
-from backend.rag.vector_store import ProductVectorStore
 from backend.ranking import RankingService, get_ranking_provider
 from backend.ranking.base import RankingProvider
 from backend.report.excel_generator import ExcelReportGenerator
@@ -44,7 +43,7 @@ products_df: pd.DataFrame | None = None
 ranking_provider: RankingProvider | None = None
 ranking_service: RankingService | None = None
 vector_store: ProductVectorStore | None = None
-chat_engine: ChatEngine | None = None
+laneige_agent: LaneigeAgent | None = None
 insight_analyzer: InsightAnalyzer | None = None
 ranking_data_cache: dict[str, pd.DataFrame] | None = None
 insights_cache: dict[str, Any] | None = None
@@ -157,7 +156,7 @@ class RankingResponse(BaseModel):
 
 @app.on_event("startup")
 async def startup_event() -> None:
-    global products_df, ranking_provider, ranking_service, vector_store, chat_engine, insight_analyzer, is_initialized
+    global products_df, ranking_provider, ranking_service, vector_store, laneige_agent, insight_analyzer, is_initialized
 
     print("=" * 50)
     print("Initializing Laneige Ranking Insight API...")
@@ -188,8 +187,8 @@ async def startup_event() -> None:
 
     refresh_ranking_cache(days=30)
 
-    chat_engine = ChatEngine(vector_store=vector_store, ranking_engine=ranking_provider)
-    print("Chat engine ready")
+    laneige_agent = LaneigeAgent(vector_store=vector_store, ranking_service=ranking_service)
+    print("LangChain Agent ready" if laneige_agent.agent else "LangChain Agent ready (mock mode)")
 
     db_stats = ranking_service.get_stats()
     print(f"DB stats: {db_stats['total_dates']} days of history")
@@ -291,10 +290,10 @@ async def get_chart_data(days: int = 30) -> list[dict[str, Any]]:
 
 @app.post("/api/chat", response_model=ChatResponse)
 async def chat(request: ChatRequest) -> ChatResponse:
-    if not is_initialized or chat_engine is None:
+    if not is_initialized or laneige_agent is None:
         raise HTTPException(status_code=503, detail="Server not initialized")
 
-    response = chat_engine.chat(request.message)
+    response = laneige_agent.chat(request.message)
 
     return ChatResponse(response=response, context_used=[])
 

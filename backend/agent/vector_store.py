@@ -172,6 +172,15 @@ class ProductVectorStore:
         return search_results
 
     def search_similar_products(self, product_name: str, n_results: int = 5) -> list[dict]:
+        """유사 제품을 검색해요.
+
+        Args:
+            product_name (str): 제품명
+            n_results (int): 반환할 결과 수 (기본값: 5)
+
+        Returns:
+            list[dict]: 유사 제품 목록
+        """
         results = self.collection.query(query_texts=[product_name], n_results=1)
 
         documents = results.get("documents")
@@ -182,6 +191,15 @@ class ProductVectorStore:
         return self.search(product_doc, n_results=n_results + 1)[1:]
 
     def get_product_context(self, query: str, n_results: int = 3) -> str:
+        """질문에 관련된 제품 컨텍스트를 생성해요.
+
+        Args:
+            query (str): 검색 쿼리
+            n_results (int): 반환할 결과 수 (기본값: 3)
+
+        Returns:
+            str: 관련 제품 컨텍스트
+        """
         results = self.search(query, n_results=n_results)
 
         if not results:
@@ -197,6 +215,14 @@ class ProductVectorStore:
         return "\n".join(context_parts)
 
     def update_with_ranking_data(self, ranking_data: dict[str, pd.DataFrame]) -> int:
+        """랭킹 데이터로 벡터 스토어를 업데이트해요.
+
+        Args:
+            ranking_data (dict[str, pd.DataFrame]): 카테고리별 랭킹 데이터
+
+        Returns:
+            int: 업데이트된 제품 수
+        """
         print("Updating vector store with ranking data...")
         updated_count = 0
 
@@ -282,16 +308,31 @@ class ProductVectorStore:
         return updated_count
 
     def clear(self) -> None:
+        """벡터 스토어를 초기화해요."""
         self.client.delete_collection(self.collection.name)
         self.collection = self.client.create_collection(
             name=self.collection.name, metadata={"description": "Beauty product information for RAG"}
         )
 
     def count(self) -> int:
+        """저장된 제품 수를 반환해요.
+
+        Returns:
+            int: 제품 수
+        """
         return int(self.collection.count())
 
 
 def build_vector_store(products_df: pd.DataFrame, persist_dir: str = "data/chroma_db") -> ProductVectorStore:
+    """벡터 스토어를 빌드해요.
+
+    Args:
+        products_df (pd.DataFrame): 제품 데이터
+        persist_dir (str): 저장 경로 (기본값: data/chroma_db)
+
+    Returns:
+        ProductVectorStore: 빌드된 벡터 스토어
+    """
     store = ProductVectorStore(persist_dir=persist_dir)
 
     if store.count() > 0:
@@ -303,34 +344,3 @@ def build_vector_store(products_df: pd.DataFrame, persist_dir: str = "data/chrom
     print(f"Vector store built with {store.count()} products")
 
     return store
-
-
-if __name__ == "__main__":
-    from src.data.loader import load_all_products
-
-    print("Loading products...")
-    products = load_all_products()
-
-    print("Building vector store...")
-    store = ProductVectorStore()
-    store.clear()
-    store.add_products(products)
-
-    print(f"\nTotal products in store: {store.count()}")
-
-    print("\n=== Search Test ===")
-    query = "overnight lip treatment with vitamin C"
-    results = store.search(query, n_results=3)
-
-    for i, result in enumerate(results, 1):
-        print(f"\n[{i}] {result['metadata']['product_name']} ({result['metadata']['brand']})")
-        print(f"    Relevance: {result['relevance_score']:.2%}")
-
-    print("\n=== LANEIGE Only Search ===")
-    results = store.search("hydrating moisturizer", n_results=3, filter_laneige=True)
-    for result in results:
-        print(f"- {result['metadata']['product_name']}")
-
-    print("\n=== Context for LLM ===")
-    context = store.get_product_context("lip sleeping mask ingredients")
-    print(context[:500] + "...")

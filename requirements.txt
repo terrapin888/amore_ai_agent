@@ -4,6 +4,11 @@ python-dotenv==1.0.0
 # LLM
 anthropic==0.40.0
 
+# LangChain Agent
+langchain>=0.3.0
+langchain-anthropic>=0.3.0
+langgraph>=0.2.0
+
 # Data Processing
 pandas==2.1.4
 openpyxl==3.1.2
