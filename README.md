@@ -286,4 +286,9 @@ Claude API 기반 RAG 시스템으로 심층 분석을 제공합니다.
 **LANEIGE Ranking Insight Agent**
 *Powered by LangChain Agent + Claude API + ChromaDB*
 
+---
+
+**Created by**
+[최수운](https://github.com/terrapin888) | [김진성](https://github.com/jinsunghub)
+
 </div>
