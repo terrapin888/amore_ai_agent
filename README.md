@@ -12,6 +12,8 @@
 > **아모레퍼시픽 AI INNOVATION CHALLENGE 2026** 공모전 참가작
 >
 > **[AGENT 07] 글로벌 이커머스 랭킹 모니터링**
+>
+> **제작자:** [최수운](https://github.com/terrapin888) | [김진성](https://github.com/jinsunghub) | 김완희
 
 글로벌 뷰티 플랫폼(Amazon US, @COSME JP) 내 라네즈 제품의 랭킹을 추적하여
 **자동 리포트 생성**과 **대화형 AI 분석**을 제공하는 **AI 인사이트 에이전트**
@@ -285,10 +287,5 @@ Claude API 기반 RAG 시스템으로 심층 분석을 제공합니다.
 
 **LANEIGE Ranking Insight Agent**
 *Powered by LangChain Agent + Claude API + ChromaDB*
-
----
-
-**Created by**
-[최수운](https://github.com/terrapin888) | [김진성](https://github.com/jinsunghub) | 김완희
 
 </div>
