@@ -289,6 +289,6 @@ Claude API 기반 RAG 시스템으로 심층 분석을 제공합니다.
 ---
 
 **Created by**
-[최수운](https://github.com/terrapin888) | [김진성](https://github.com/jinsunghub)
+[최수운](https://github.com/terrapin888) | [김진성](https://github.com/jinsunghub) | 김완희
 
 </div>
