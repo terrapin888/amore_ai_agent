@@ -10,7 +10,7 @@ import json
 from datetime import datetime
 
 import pandas as pd
-import requests
+import requests  # type: ignore[import-untyped]
 
 from .base import RankingProvider
 

@@ -69,6 +69,7 @@ Amazon Product Advertising API(PA-API 5.0)를 통해 실시간 랭킹 데이터�
 - **9가지 전문 Tool**: 제품 검색, 랭킹 조회, 경쟁사 비교, 트렌드 분석 등
 - **멀티스텝 추론**: 복잡한 질문에 대해 여러 도구를 순차적으로 활용
 - **Vector DB(ChromaDB)**: 관련 제품 정보 시맨틱 검색
+- **LangSmith 모니터링**: Agent 실행 과정 추적 및 성능 분석
 
 **프롬프트 엔지니어링 기법:**
 
@@ -280,6 +281,7 @@ Claude API 기반 RAG 시스템으로 심층 분석을 제공합니다.
 | **Database** | SQLite + SQLAlchemy | 랭킹 히스토리 저장 |
 | **Report** | OpenPyXL | 엑셀 리포트 생성 |
 | **Ranking API** | Amazon PA-API 5.0 | 실시간 Amazon 랭킹 데이터 |
+| **Monitoring** | LangSmith | Agent 모니터링/디버깅 |
 
 ### Frontend
 
@@ -328,6 +330,21 @@ GitHub Actions를 통해 Push/PR 시 자동으로 품질 검사를 수행합니�
 - Frontend: TypeScript 타입 체크, ESLint
 - Backend: Ruff 린트/포맷, Mypy 타입 체크, Pytest 테스트
 ```
+
+### Agent 모니터링 (LangSmith)
+
+LangSmith를 통해 Agent 실행 과정을 실시간으로 모니터링합니다.
+
+**추적 가능한 정보:**
+- **Tool 호출 흐름**: 어떤 Tool이 어떤 순서로 호출되었는지
+- **Input/Output**: 각 Tool에 전달된 파라미터와 반환 결과
+- **토큰 사용량**: LLM 호출별 토큰 소비량 및 비용
+- **Latency**: 각 단계별 소요 시간
+
+**활용 사례:**
+- Agent가 잘못된 Tool을 선택할 때 원인 분석
+- 토큰 사용량 최적화를 위한 병목 구간 파악
+- 응답 지연 원인 진단
 
 ---
 

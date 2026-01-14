@@ -184,7 +184,7 @@ class MockVectorStore:
         ]
 
         if filter_laneige:
-            return [r for r in mock_results if r["metadata"].get("is_laneige")]
+            return [r for r in mock_results if r["metadata"].get("is_laneige")]  # type: ignore[attr-defined]
         return mock_results[:n_results]
 
     def get_product_context(self, query: str, n_results: int = 3) -> str:  # noqa: ARG002
