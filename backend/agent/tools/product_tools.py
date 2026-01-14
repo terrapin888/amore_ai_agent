@@ -78,10 +78,10 @@ def create_product_tools(vector_store: "ProductVectorStore") -> list:
 
     @tool
     def get_product_context(query: str) -> str:
-        """질문에 관련된 제품 컨텍스트를 가져와요. 상세 정보가 필요할 때 사용해요.
+        """제품의 성분, 특징, 효능 등 상세 정보를 조회해요. 제품 스펙이 필요할 때 사용해요.
 
         Args:
-            query: 검색 쿼리
+            query: 검색 쿼리 (예: "립 슬리핑 마스크 성분", "워터뱅크 효능")
 
         Returns:
             str: 관련 제품들의 상세 컨텍스트

@@ -68,7 +68,17 @@ Amazon Product Advertising API(PA-API 5.0)를 통해 실시간 랭킹 데이터�
 - **LangGraph ReAct Agent**: AI가 질문에 따라 적절한 도구를 자동 선택
 - **9가지 전문 Tool**: 제품 검색, 랭킹 조회, 경쟁사 비교, 트렌드 분석 등
 - **멀티스텝 추론**: 복잡한 질문에 대해 여러 도구를 순차적으로 활용
-- Vector DB(ChromaDB)에서 관련 제품 정보 검색
+- **Vector DB(ChromaDB)**: 관련 제품 정보 시맨틱 검색
+
+**프롬프트 엔지니어링 기법:**
+
+| 기법 | 적용 내용 | 목적 |
+|:----:|:----------|:-----|
+| **Role Prompting** | "글로벌 뷰티 시장 분석 전문가" 역할 부여 | 전문성 있는 답변 유도 |
+| **Emotional Prompting** | "정확한 분석은 매우 중요합니다" 강조 | 정확성 향상, 추측 방지 |
+| **Chain-of-Thought** | 5단계 사고 과정 (질문파악→데이터수집→분석→결론→제안) | 복잡한 질문 논리적 처리 |
+| **Output Format** | 📊요약 / 📈데이터 / 🔍분석 / 💡제안 구조 | 답변 일관성 확보 |
+| **Few-shot Learning** | 5가지 질문 유형별 예시 제공 | 다양한 질문 유형 대응 |
 
 ---
 
@@ -228,12 +238,14 @@ Claude API 기반 RAG 시스템으로 심층 분석을 제공합니다.
 
 **LangChain Agent**가 자연어 질문을 분석하고 적절한 도구를 선택하여 인사이트를 제공합니다.
 
-**Agent가 사용하는 Tool:**
+**Agent가 사용하는 9가지 Tool:**
 - `search_products`: 제품 정보 검색
 - `search_laneige_products`: LANEIGE 제품 검색
+- `get_product_context`: 제품 상세 컨텍스트 조회
 - `get_product_history`: 제품 순위 히스토리 조회
 - `get_category_rankings`: 카테고리별 랭킹 조회
 - `get_laneige_summary`: LANEIGE 성과 요약
+- `get_ranking_stats`: 데이터 현황 조회
 - `compare_competitors`: 경쟁사 비교 분석
 - `analyze_trend`: 트렌드 분석
 
@@ -280,6 +292,42 @@ Claude API 기반 RAG 시스템으로 심층 분석을 제공합니다.
 | **Styling** | Tailwind CSS | 스타일링 |
 | **UI Components** | shadcn/ui | 컴포넌트 라이브러리 |
 | **Charts** | Recharts | 데이터 시각화 |
+
+---
+
+## 테스트 및 품질 관리
+
+### 자동화 테스트
+
+LLM 기반 Agent의 품질을 보장하기 위해 **49개의 자동화 테스트**를 구현했습니다.
+
+```bash
+# 테스트 실행
+python -m pytest backend/tests/ -v
+```
+
+**테스트 구성:**
+
+| 테스트 유형 | 테스트 수 | 검증 내용 |
+|:----------:|:--------:|:----------|
+| **Tool 선택 정확도** | 13개 | 9개 Tool 생성/동작/docstring 검증 |
+| **Ground Truth 비교** | 16개 | Mock 데이터 기반 정확도 검증 |
+| **응답 구조 검증** | 20개 | 형식, 필수 필드, 에러 처리 검증 |
+
+**평가 방식:**
+- **코드 기반 검증**: 응답 형식, 필수 필드 존재 여부를 코드로 검사
+- **Ground Truth 비교**: Mock 데이터를 정답으로 정의하고 Tool 응답과 비교
+- **LLM-as-Judge 미사용**: API 비용 없이 객관적이고 재현 가능한 테스트
+
+### CI/CD
+
+GitHub Actions를 통해 Push/PR 시 자동으로 품질 검사를 수행합니다.
+
+```yaml
+# .github/workflows/ci.yml
+- Frontend: TypeScript 타입 체크, ESLint
+- Backend: Ruff 린트/포맷, Mypy 타입 체크, Pytest 테스트
+```
 
 ---
 

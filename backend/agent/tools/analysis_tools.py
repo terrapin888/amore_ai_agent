@@ -23,7 +23,7 @@ def create_analysis_tools(ranking_service: "RankingService") -> list:
 
     @tool
     def compare_competitors(category: str, laneige_product: str = "") -> str:
-        """LANEIGE 제품과 경쟁사 제품을 비교 분석해요.
+        """LANEIGE 제품과 경쟁사 제품을 비교 분석해요. 경쟁 우위/열위를 파악할 때 사용해요.
 
         Args:
             category: 카테고리명 (lip_care, skincare, makeup)
@@ -75,11 +75,11 @@ def create_analysis_tools(ranking_service: "RankingService") -> list:
 
     @tool
     def analyze_trend(product_name: str = "", category: str = "") -> str:
-        """제품 또는 카테고리의 트렌드를 분석해요.
+        """제품 또는 카테고리의 트렌드를 분석해요. 상승/하락 추세를 파악할 때 사용해요.
 
         Args:
-            product_name: 분석할 제품명 (선택사항)
-            category: 분석할 카테고리 (선택사항)
+            product_name: 분석할 제품명 (예: "Lip Sleeping Mask")
+            category: 분석할 카테고리 (예: "lip_care", "skincare")
 
         Returns:
             str: 트렌드 분석 결과

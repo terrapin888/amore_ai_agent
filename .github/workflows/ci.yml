@@ -68,3 +68,6 @@ jobs:
 
       - name: Mypy type check
         run: python -m mypy backend/ --ignore-missing-imports
+
+      - name: Run Agent Tests
+        run: python -m pytest backend/tests/ -v --tb=short
