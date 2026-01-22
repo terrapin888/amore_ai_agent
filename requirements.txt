@@ -14,8 +14,8 @@ pandas==2.1.4
 openpyxl==3.1.2
 
 # RAG
-chromadb==0.4.22
-sentence-transformers==2.2.2
+chromadb>=1.0.0
+sentence-transformers>=2.6.0
 
 # API Server
 fastapi==0.109.0
